@@ -16,7 +16,8 @@ Write the user's morning brief into the private GitHub repo `Dong-Xuyong/progres
         "summary": "FAKE. Dry morning.",
         "hiC": 99,
         "loC": -99,
-        "rainMm": 0
+        "rainMm": 0,
+        "code": 0
       },
       "insight": {
         "slug": "fake-slug",
@@ -38,7 +39,7 @@ Write the user's morning brief into the private GitHub repo `Dong-Xuyong/progres
 Each real day has:
 
 - `updatedAt`: ISO-8601 UTC.
-- `weather`: `{ "summary": string, "hiC": number, "loC": number, "rainMm": number }`. Omit the object if the forecast request fails.
+- `weather`: `{ "summary": string, "hiC": number, "loC": number, "rainMm": number, "code": integer }`. `code` is a WMO weather code. Omit the object if the forecast request fails.
 - `insight`: `{ "slug", "title", "why" }`. Omit the object if the wiki pool fails to load, or if no item matches a signal you saw.
 - `brief`: string. The spoken script.
 - `opinion`: string. One sentence.
@@ -55,9 +56,9 @@ GET these before writing. Progress-sync files are in `Dong-Xuyong/progress-sync`
 4. `streetlifting.json`. `sessions[day]` has `lifts`, `activities`, `bw`, `coach`, `note`. In `programs[lift].days`, the first day without `done` is the next session. `goals` have `lift`, `target`, `reps`. Do not write `streetlifting.json`.
 5. Weather, no key. GET exactly:
 
-   `https://api.open-meteo.com/v1/forecast?latitude=41.44&longitude=-8.30&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_hours&hourly=precipitation_probability&timezone=Europe/Lisbon&forecast_days=1`
+   `https://api.open-meteo.com/v1/forecast?latitude=41.44&longitude=-8.30&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_hours&hourly=precipitation_probability&timezone=Europe/Lisbon&forecast_days=1`
 
-   This is Guimarães, Portugal. Do not change the URL. `summary` is one short clause you write from that JSON. A rain window is the local hours where `hourly.precipitation_probability` is 50 or higher. Name that window in the clause when it exists. `hiC` is `daily.temperature_2m_max[0]`, `loC` is `daily.temperature_2m_min[0]`, `rainMm` is `daily.precipitation_sum[0]`. Copy those numbers. Use index 0 only when `daily.time[0]` is today in Europe/Lisbon. If the request fails, omit `weather`. Do not invent a forecast.
+   This is Guimarães, Portugal. Do not change the URL. `summary` is one short clause you write from that JSON. A rain window is the local hours where `hourly.precipitation_probability` is 50 or higher. Name that window in the clause when it exists. `hiC` is `daily.temperature_2m_max[0]`, `loC` is `daily.temperature_2m_min[0]`, `rainMm` is `daily.precipitation_sum[0]`. `code` is `daily.weather_code[0]`, the same index rule. Copy the integer. If it is missing, omit `code`. Do not invent a code. Copy those numbers. Use index 0 only when `daily.time[0]` is today in Europe/Lisbon. If the request fails, omit `weather`. Do not invent a forecast.
 6. Wiki pool. GET `https://dong-xuyong.github.io/mirror/wiki-pool.json`. It is `{ "concepts": [ { "slug", "title", "definition", "url" } ] }`. Pick ONE concept whose `definition` matches a real signal you actually saw (sleep, mood, training, rain, an open todo). `insight.slug` and `insight.title` come from that item. `insight.why` is one sentence naming the signal. If the pool fails to load, or nothing matches, omit `insight`. Do not invent a slug.
 
 ## The brief

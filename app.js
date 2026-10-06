@@ -14,6 +14,12 @@
   ) {
     throw new Error("MirrorCore is not loaded");
   }
+  if (typeof MirrorCore.skyOf !== "function") throw new Error("MirrorCore.skyOf is not loaded");
+  if (typeof MirrorCore.sleepStat !== "function") throw new Error("MirrorCore.sleepStat is not loaded");
+  if (typeof MirrorCore.weightStat !== "function") throw new Error("MirrorCore.weightStat is not loaded");
+  if (typeof MirrorCore.nextLift !== "function") throw new Error("MirrorCore.nextLift is not loaded");
+  if (typeof MirrorCore.moodStat !== "function") throw new Error("MirrorCore.moodStat is not loaded");
+  if (typeof MirrorCore.minutes !== "function") throw new Error("MirrorCore.minutes is not loaded");
   if (!window.GhSync || typeof GhSync.save !== "function" || typeof GhSync.load !== "function") {
     throw new Error("GhSync is not loaded");
   }
@@ -30,7 +36,11 @@
     prev: must("prev"),
     today: must("today"),
     next: must("next"),
-    weather: must("weather"),
+    hero: must("hero"),
+    skySummary: must("sky-summary"),
+    hi: must("hi"),
+    lo: must("lo"),
+    stats: must("stats"),
     insight: must("insight"),
     brief: must("brief"),
     opinion: must("opinion"),
@@ -50,6 +60,7 @@
   var retried = false;
   var speechGen = 0;
   var speechLabel = "Play";
+  var side = { journal: null, nutrition: null, streetlifting: null };
 
   function readStore() {
     try {
@@ -134,21 +145,82 @@
     else el.appendChild(node("div", "muted", "\u00a0"));
   }
 
-  function paintWeather(day) {
-    var weather = day && day.weather && typeof day.weather === "object" ? day.weather : null;
-    var summary = weather ? asText(weather.summary).trim() : "";
-    var line;
-    els.weather.textContent = "";
-    if (!summary) {
-      els.weather.appendChild(node("div", "muted", "No weather yet."));
-      return;
+  function ringPct(hours, target) {
+    var p;
+    if (typeof target !== "number") return 0;
+    p = (hours / target) * 100;
+    if (!isFinite(p) || p < 0) return 0;
+    if (p > 100) return 100;
+    return p;
+  }
+
+  function dots(count, title) {
+    var wrap = node("div", "dots");
+    var i;
+    wrap.title = title;
+    for (i = 0; i < 5; i++) wrap.appendChild(node("span", i < count ? "dot on" : "dot"));
+    return wrap;
+  }
+
+  function statTile(k, v, s) {
+    var el = node("div", "tile");
+    var value = node("div", "v");
+    el.appendChild(node("div", "k", k));
+    if (v && v.nodeType) value.appendChild(v);
+    else value.textContent = v == null ? "" : String(v);
+    el.appendChild(value);
+    el.appendChild(node("div", "s", s == null ? "" : String(s)));
+    return el;
+  }
+
+  function paintStats(key) {
+    var sleep = MirrorCore.sleepStat(side.nutrition, key);
+    var weight = MirrorCore.weightStat(side.nutrition, key);
+    var lift = MirrorCore.nextLift(side.streetlifting);
+    var mood = MirrorCore.moodStat(side.journal, key);
+    var sleepEl = statTile(
+      "Sleep",
+      sleep ? sleep.hours + " h" : "\u2014",
+      sleep ? (typeof sleep.target === "number" ? "of " + sleep.target + " h" : "") : "not logged"
+    );
+    var ring = node("div", "ring");
+    var delta = "";
+    var liftLabel = "";
+    var liftDetail = "";
+    var moodBox;
+    if (sleep) {
+      ring.style.setProperty("--p", String(ringPct(sleep.hours, sleep.target)));
+      sleepEl.appendChild(ring);
     }
-    line = summary;
-    if (Number.isFinite(weather.hiC) && Number.isFinite(weather.loC)) {
-      line += " " + weather.hiC + "° / " + weather.loC + "°";
+    els.stats.textContent = "";
+    els.stats.appendChild(sleepEl);
+    if (!weight) {
+      els.stats.appendChild(statTile("Weight", "\u2014", "not logged"));
+    } else {
+      if (typeof weight.delta === "number" && isFinite(weight.delta)) {
+        delta = (weight.delta > 0 ? "+" : "") + weight.delta.toFixed(1) + " kg vs goal";
+      }
+      els.stats.appendChild(statTile("Weight", weight.kg + " kg", delta));
     }
-    if (Number.isFinite(weather.rainMm)) line += " · " + weather.rainMm + " mm";
-    els.weather.textContent = line;
+    if (!lift) {
+      els.stats.appendChild(statTile("Next lift", "\u2014", "not logged"));
+    } else {
+      liftLabel = lift.label ? String(lift.label) : "";
+      liftDetail = lift.detail ? String(lift.detail) : "";
+      els.stats.appendChild(statTile(
+        "Next lift",
+        lift.name == null ? "" : String(lift.name),
+        liftLabel && liftDetail ? liftLabel + " \u00b7 " + liftDetail : liftLabel || liftDetail
+      ));
+    }
+    if (!mood) {
+      els.stats.appendChild(statTile("Mood", "\u2014", "not logged"));
+    } else {
+      moodBox = document.createDocumentFragment();
+      moodBox.appendChild(dots(mood.mood, "Mood"));
+      if (typeof mood.energy === "number" && isFinite(mood.energy)) moodBox.appendChild(dots(mood.energy, "Energy"));
+      els.stats.appendChild(statTile("Mood", moodBox, mood.date == null ? "" : String(mood.date)));
+    }
   }
 
   function paintInsight(day) {
@@ -188,6 +260,7 @@
       text.textContent = "No brief yet. Grok writes this at 07:00.";
     }
     els.brief.appendChild(btn);
+    if (has) els.brief.appendChild(node("span", "mins", "about " + MirrorCore.minutes(brief) + " min"));
     els.brief.appendChild(text);
   }
 
@@ -212,8 +285,17 @@
   function render() {
     var day = dayOf(cur);
     var label = MirrorCore.label(cur);
+    var isToday = cur === MirrorCore.todayKey(new Date());
+    var sky = MirrorCore.skyOf(day && day.weather, new Date().getHours(), isToday);
+    var weather = day && day.weather && typeof day.weather === "object" ? day.weather : null;
+    var summary = weather ? asText(weather.summary).trim() : "";
     els.day.textContent = label == null ? "" : String(label);
-    paintWeather(day);
+    els.hero.setAttribute("data-sky", sky.sky);
+    els.hero.setAttribute("data-time", sky.time);
+    els.hi.textContent = weather && Number.isFinite(weather.hiC) ? weather.hiC + "\u00b0" : "\u2014";
+    els.lo.textContent = weather && Number.isFinite(weather.loC) ? weather.loC + "\u00b0" : "";
+    els.skySummary.textContent = summary || "No weather yet.";
+    paintStats(cur);
     paintInsight(day);
     paintBrief(day);
     paintPlain(els.opinion, day ? day.opinion : "");
@@ -321,6 +403,16 @@
     }
   }
 
+  function loadSides() {
+    if (!hasToken()) return;
+    ["journal", "nutrition", "streetlifting"].forEach(function (id) {
+      GhSync.load(id, function (data) {
+        side[id] = data;
+        if (!answerFocused()) render();
+      }).then(function () {}, function () {});
+    });
+  }
+
   function showConnect() {
     els.connect.hidden = hasToken();
   }
@@ -417,11 +509,15 @@
   });
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "hidden" && saveTimer) pushNow();
-    if (document.visibilityState === "visible") autoLoad();
+    if (document.visibilityState === "visible") {
+      autoLoad();
+      loadSides();
+    }
   });
 
   if (window.speechSynthesis) window.speechSynthesis.getVoices();
   showToday();
   setInterval(autoLoad, 60000);
   autoLoad();
+  loadSides();
 })();

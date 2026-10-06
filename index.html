@@ -10,7 +10,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪞</text></svg>" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="dong-ui/theme.css?v=4" />
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=3" />
   <script src="dong-ui/theme.js"></script>
   <link rel="manifest" href="manifest.webmanifest" />
 </head>
@@ -20,8 +20,19 @@
     <span id="sync-label" aria-live="polite"></span>
     <button type="button" data-dong-theme-toggle aria-label="Toggle color theme"></button>
   </header>
-  <section class="hero">
-    <h2 id="day-label"></h2>
+  <section class="hero" id="hero" data-sky="cloud" data-time="day">
+    <div class="sky" aria-hidden="true">
+      <div class="sun"></div>
+      <div class="cloud c1"></div>
+      <div class="cloud c2"></div>
+      <div class="rain"></div>
+    </div>
+    <div class="hero-copy">
+      <h2 id="day-label"></h2>
+      <p id="sky-summary"></p>
+    </div>
+    <p id="hi" class="hi"></p>
+    <p id="lo" class="lo"></p>
     <div class="period-nav">
       <button type="button" id="prev" aria-label="Previous">‹</button>
       <button type="button" id="today">Today</button>
@@ -29,9 +40,9 @@
     </div>
   </section>
   <main>
-    <section id="weather" class="card"></section>
-    <section id="insight" class="card"></section>
+    <section id="stats" class="stats"></section>
     <section id="brief" class="card"></section>
+    <section id="insight" class="card"></section>
     <section id="opinion" class="card"></section>
     <section id="question" class="card"></section>
     <section id="answer" class="card"></section>
@@ -40,7 +51,7 @@
     <button type="button" id="btn-connect">Connect GitHub to sync</button>
   </footer>
   <script src="dong-ui/gh-sync.js?v=4"></script>
-  <script src="core.js?v=1"></script>
-  <script src="app.js?v=1"></script>
+  <script src="core.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
