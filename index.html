@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f6f4ef" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Mirror" />
+  <title>Mirror</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪞</text></svg>" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Encode+Sans:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="dong-ui/theme.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=1" />
+  <script src="dong-ui/theme.js"></script>
+  <link rel="manifest" href="manifest.webmanifest" />
+</head>
+<body>
+  <header>
+    <h1>🪞 Mirror</h1>
+    <span id="sync-label" aria-live="polite"></span>
+    <button type="button" data-dong-theme-toggle aria-label="Toggle color theme"></button>
+  </header>
+  <section class="hero">
+    <h2 id="day-label"></h2>
+    <div class="period-nav">
+      <button type="button" id="prev" aria-label="Previous">‹</button>
+      <button type="button" id="today">Today</button>
+      <button type="button" id="next" aria-label="Next">›</button>
+    </div>
+  </section>
+  <main>
+    <section id="weather" class="card"></section>
+    <section id="insight" class="card"></section>
+    <section id="brief" class="card"></section>
+    <section id="opinion" class="card"></section>
+    <section id="question" class="card"></section>
+    <section id="answer" class="card"></section>
+  </main>
+  <footer id="connect" hidden>
+    <button type="button" id="btn-connect">Connect GitHub to sync</button>
+  </footer>
+  <script src="dong-ui/gh-sync.js?v=4"></script>
+  <script src="core.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
