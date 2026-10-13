@@ -1,6 +1,6 @@
 {
-  "name": "Mirror",
-  "short_name": "Mirror",
+  "name": "Morning Brief",
+  "short_name": "Morning Brief",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
