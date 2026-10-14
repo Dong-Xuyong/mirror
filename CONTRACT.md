@@ -30,6 +30,18 @@ Write the user's morning brief into the private GitHub repo `Dong-Xuyong/progres
       "answer": {
         "text": "",
         "updatedAt": ""
+      },
+      "top3": [
+        { "text": "FAKE priority", "done": false }
+      ],
+      "sunCaffeine": {
+        "text": "FAKE. Morning sunlight. No caffeine after 14:00.",
+        "coffeeAfter": "14:00",
+        "wakeAssumed": "07:30"
+      },
+      "liftWalkthrough": {
+        "lift": "FAKE lift",
+        "text": "FAKE walkthrough. Do not follow this."
       }
     }
   }
@@ -45,6 +57,9 @@ Each real day has:
 - `opinion`: string. One sentence.
 - `question`: string. One question.
 - `answer`: `{ "text", "updatedAt" }`. The user writes this. You never change it.
+- `top3`: optional, up to three `{ "text", "done" }`. The website prefills its Top 3 from `text` and does not write this key. Omit it when you have no suggestion. If it is already on the day, keep it unless you are replacing today's suggestion.
+- `sunCaffeine`: optional. `{ "text", "coffeeAfter": "HH:MM", "wakeAssumed": "HH:MM" }`. The website shows `text` (or a generic sunlight and caffeine line when `text` is missing) and uses `coffeeAfter` on the cutoff chip. It does not write this object.
+- `liftWalkthrough`: optional. `{ "lift", "text" }`. The website shows `text` in a collapsed note. It does not write this object.
 
 ## What you read first
 
@@ -86,4 +101,5 @@ Also set `opinion` and `question` to those same two sentences, so the page can s
 - If the GET is 404, PUT a new file: `version` 1 and today's day only. Send no `sha`.
 - Message: `"Save mirror"`. `content` is base64 of the UTF-8 JSON. Header: `Authorization: Bearer <token>`. API: `PUT https://api.github.com/repos/Dong-Xuyong/progress-sync/contents/mirror.json`.
 - Token: a fine-grained PAT with Contents read and write on `Dong-Xuyong/progress-sync` only. Do not put the token in any repo.
-- The website writes only `answer`. If the file changed between your GET and PUT, the retry must keep the newer answer.
+- The website writes only `answer` on this file. If the file changed between your GET and PUT, the retry must keep the newer answer. Also keep `top3`, `sunCaffeine`, and `liftWalkthrough` when they are already on the day and you are not replacing them.
+- The website writes the morning check-in on `journal.json` `days[YYYY-MM-DD]` for the Europe/Lisbon date. You do not write that check-in, and you do not read it in place of `entries[day].fields`. Mood and energy for the brief still come from `entries[day].fields`.

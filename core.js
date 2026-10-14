@@ -232,16 +232,220 @@
     return value;
   }
 
+  function plain(value) {
+    return !!value && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function has(obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+  }
+
+  // RULER: high energy on top, pleasant on the right.
+  // red tense, yellow upbeat, blue low, green calm.
+  // Pleasantness maps to mood 1-5. Energy maps to energy 1-5.
+  var QUADRANTS = [
+    { id: "red", name: "Red", label: "Tense", energy: "high", pleasantness: "low", mood: 2, energyScore: 4 },
+    { id: "yellow", name: "Yellow", label: "Upbeat", energy: "high", pleasantness: "high", mood: 5, energyScore: 5 },
+    { id: "blue", name: "Blue", label: "Low", energy: "low", pleasantness: "low", mood: 1, energyScore: 1 },
+    { id: "green", name: "Green", label: "Calm", energy: "low", pleasantness: "high", mood: 4, energyScore: 2 }
+  ];
+
+  function quadrantById(id) {
+    var i;
+    for (i = 0; i < QUADRANTS.length; i++) if (QUADRANTS[i].id === id) return QUADRANTS[i];
+    return null;
+  }
+
+  function lisbonToday(date) {
+    var when = date == null ? new Date() : date;
+    var parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Europe/Lisbon",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(when);
+    var year = "";
+    var month = "";
+    var day = "";
+    var i;
+    for (i = 0; i < parts.length; i++) {
+      if (parts[i].type === "year") year = parts[i].value;
+      if (parts[i].type === "month") month = parts[i].value;
+      if (parts[i].type === "day") day = parts[i].value;
+    }
+    if (!/^\d{4}$/.test(year) || !/^\d{2}$/.test(month) || !/^\d{2}$/.test(day)) {
+      throw new Error("bad Lisbon date");
+    }
+    return year + "-" + month + "-" + day;
+  }
+
+  function moodQuadrants() {
+    var out = [];
+    var i;
+    var src;
+    for (i = 0; i < QUADRANTS.length; i++) {
+      src = QUADRANTS[i];
+      out.push({
+        id: src.id,
+        name: src.name,
+        label: src.label,
+        energy: src.energy,
+        pleasantness: src.pleasantness,
+        mood: src.mood,
+        energyScore: src.energyScore
+      });
+    }
+    return out;
+  }
+
+  function cleanTop3(list) {
+    var out = [];
+    var i;
+    var item;
+    if (!Array.isArray(list)) return null;
+    for (i = 0; i < list.length && out.length < 3; i++) {
+      item = list[i];
+      if (!plain(item) || typeof item.text !== "string") continue;
+      out.push({ text: item.text, done: item.done === true });
+    }
+    return out;
+  }
+
+  function cleanMeter(meter) {
+    var spec;
+    if (!plain(meter)) return null;
+    spec = quadrantById(meter.quadrant);
+    if (!spec) return null;
+    return {
+      quadrant: spec.id,
+      energy: spec.energy,
+      pleasantness: spec.pleasantness,
+      updatedAt: typeof meter.updatedAt === "string" && meter.updatedAt ? meter.updatedAt : new Date().toISOString()
+    };
+  }
+
+  function cleanSleep(sleep) {
+    var out = {};
+    if (!plain(sleep)) return null;
+    if (sleep.hours === 5 || sleep.hours === 6 || sleep.hours === 7 || sleep.hours === 8 || sleep.hours === "9+") {
+      out.hours = sleep.hours;
+    }
+    if (sleep.quality === "poor" || sleep.quality === "ok" || sleep.quality === "good") out.quality = sleep.quality;
+    if (typeof sleep.wake === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(sleep.wake)) out.wake = sleep.wake;
+    if (!has(out, "hours") && !has(out, "quality") && !has(out, "wake")) return null;
+    out.updatedAt = typeof sleep.updatedAt === "string" && sleep.updatedAt ? sleep.updatedAt : new Date().toISOString();
+    return out;
+  }
+
+  function mirrorEntryScores(journal, dayKey, moodValue, energyValue, writeMood, writeEnergy) {
+    var entry;
+    if (!writeMood && !writeEnergy) return;
+    if (journal.entries == null) journal.entries = {};
+    if (!plain(journal.entries)) return;
+    if (journal.entries[dayKey] == null) journal.entries[dayKey] = {};
+    if (!plain(journal.entries[dayKey])) return;
+    entry = journal.entries[dayKey];
+    if (entry.fields == null) entry.fields = {};
+    if (!plain(entry.fields)) return;
+    if (writeMood) entry.fields.mood = moodValue;
+    if (writeEnergy) entry.fields.energy = energyValue;
+  }
+
+  function applyJournalCheckin(journal, dayKey, patch) {
+    var day;
+    var meter;
+    var sleep;
+    var top3;
+    var spec;
+    var writeMood = false;
+    var writeEnergy = false;
+    if (!plain(journal)) throw new Error("bad journal");
+    if (!isDayKey(dayKey)) throw new Error("bad day key");
+    if (!plain(patch)) return journal;
+    if (journal.days == null) journal.days = {};
+    else if (!plain(journal.days)) throw new Error("journal.days is not an object");
+    if (journal.days[dayKey] == null) journal.days[dayKey] = {};
+    else if (!plain(journal.days[dayKey])) throw new Error("journal day is not an object");
+    day = journal.days[dayKey];
+
+    if (has(patch, "top3")) {
+      top3 = cleanTop3(patch.top3);
+      if (top3 !== null) day.top3 = top3;
+    }
+    if (has(patch, "top3UpdatedAt") && typeof patch.top3UpdatedAt === "string" && patch.top3UpdatedAt) {
+      day.top3UpdatedAt = patch.top3UpdatedAt;
+    }
+    if (has(patch, "moodMeter")) {
+      meter = cleanMeter(patch.moodMeter);
+      if (meter) {
+        spec = quadrantById(meter.quadrant);
+        day.moodMeter = meter;
+        day.mood = spec.mood;
+        day.energy = spec.energyScore;
+        writeMood = true;
+        writeEnergy = true;
+      }
+    }
+    if (!writeMood && has(patch, "mood") && score15(patch.mood) !== null) {
+      day.mood = patch.mood;
+      writeMood = true;
+    }
+    if (!writeEnergy && has(patch, "energy") && score15(patch.energy) !== null) {
+      day.energy = patch.energy;
+      writeEnergy = true;
+    }
+    if (has(patch, "sleep")) {
+      sleep = cleanSleep(patch.sleep);
+      if (sleep) day.sleep = sleep;
+    }
+    if (has(patch, "sunlight")) {
+      if (patch.sunlight === null) delete day.sunlight;
+      else if (typeof patch.sunlight === "boolean") day.sunlight = patch.sunlight;
+    }
+    if (has(patch, "caffeine")) {
+      if (patch.caffeine === null) delete day.caffeine;
+      else if (typeof patch.caffeine === "boolean") day.caffeine = patch.caffeine;
+    }
+    if (writeMood || writeEnergy) mirrorEntryScores(journal, dayKey, day.mood, day.energy, writeMood, writeEnergy);
+    return journal;
+  }
+
+  function jsonIndent(raw) {
+    var match;
+    if (typeof raw !== "string") return 2;
+    match = /\n(\t+)"/.exec(raw);
+    if (match) return "\t";
+    match = /\n( +)"/.exec(raw);
+    if (match) return match[1].length;
+    if (raw.indexOf("\n") === -1) return 0;
+    return 2;
+  }
+
+  function moodFromDays(journal, key) {
+    var day;
+    var mood;
+    var energy;
+    if (!plain(journal.days)) return null;
+    day = journal.days[key];
+    if (!plain(day)) return null;
+    mood = score15(day.mood);
+    energy = score15(day.energy);
+    if (mood === null && energy === null) return null;
+    return { mood: mood, energy: energy, date: key };
+  }
+
   function moodOn(journal, key) {
     var entry;
     var fields;
     var mood;
     var energy;
-    if (!journal.entries || typeof journal.entries !== "object") return null;
+    var fromDay = moodFromDays(journal, key);
+    if (fromDay) return fromDay;
+    if (!journal.entries || typeof journal.entries !== "object" || Array.isArray(journal.entries)) return null;
     entry = journal.entries[key];
-    if (!entry || typeof entry !== "object") return null;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
     fields = entry.fields;
-    if (!fields || typeof fields !== "object") return null;
+    if (!fields || typeof fields !== "object" || Array.isArray(fields)) return null;
     mood = score15(fields.mood);
     energy = score15(fields.energy);
     if (mood === null && energy === null) return null;
@@ -278,7 +482,11 @@
     weightStat: weightStat,
     nextLift: nextLift,
     moodStat: moodStat,
-    minutes: minutes
+    minutes: minutes,
+    lisbonToday: lisbonToday,
+    moodQuadrants: moodQuadrants,
+    applyJournalCheckin: applyJournalCheckin,
+    jsonIndent: jsonIndent
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;
