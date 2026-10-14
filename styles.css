@@ -635,6 +635,199 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+.card[hidden] {
+  display: none;
+}
+
+.top3 {
+  margin-top: 12px;
+}
+
+.kicker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.top3-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.top3-row input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  flex: 0 0 22px;
+  accent-color: hsl(205 70% 46%);
+}
+
+.top3-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
+.top3-row:has(input:checked) input[type="text"] {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
+.hint,
+.sun-text {
+  margin: 8px 0 0;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.sun-text {
+  margin: 0 0 10px;
+  color: inherit;
+}
+
+.tile.wide {
+  grid-column: 1 / -1;
+}
+
+.chip-label {
+  margin: 10px 0 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chips button,
+.meter button {
+  -webkit-appearance: none;
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.chips button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: inherit;
+  font-weight: 600;
+}
+
+.chips button[aria-pressed="true"] {
+  background: hsl(205 70% 46%);
+  border-color: transparent;
+  color: #fff;
+}
+
+.chips button:disabled {
+  cursor: default;
+}
+
+.wake-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.wake-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+}
+
+.meter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.meter button {
+  min-height: 76px;
+  padding: 8px;
+  border: 3px solid transparent;
+  border-radius: 14px;
+  color: #1b140c;
+  text-align: center;
+}
+
+.meter button[data-quadrant="red"] { background: #e36b6b; }
+.meter button[data-quadrant="yellow"] { background: #f0c14a; }
+.meter button[data-quadrant="blue"] { background: #7eb6ef; }
+.meter button[data-quadrant="green"] { background: #7dcc9a; }
+
+.meter button[aria-pressed="true"] {
+  border-color: var(--ink);
+}
+
+.meter button:disabled {
+  cursor: default;
+}
+
+.meter button:disabled:not([aria-pressed="true"]) {
+  opacity: 0.72;
+}
+
+.meter-name,
+.meter-label {
+  display: block;
+}
+
+.meter-name {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.meter-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+#lift summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+#lift p {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
